@@ -1,0 +1,53 @@
+#
+# SEED:
+seed  78901
+#
+# Declare app
+app_style bcc/selfdiffusion
+#
+dimension	 3
+#
+boundary p p p
+#
+lattice		 bcc 1.0
+region		 box block 0 50 0 50 0 50 
+create_box	 box
+create_sites	 box 
+
+set             i1 value 2                	 # set all to reg 
+set             i1 range 3 8 fraction 0.0000001      # set fraction to dumbbells, 3 to 8 
+set             i1 value 1 fraction   0.01      # set fraction to vacancies 
+
+bcc/selfdiffusion rate V_anniAtSinks 0.0
+bcc/selfdiffusion rate D_anniAtSinks 0.00001
+bcc/selfdiffusion rate VD_mutualAnni 0.001 
+
+bcc/selfdiffusion rate Freq_DRot     0.01
+bcc/selfdiffusion rate Freq_DDiff    1 
+bcc/selfdiffusion rate Freq_VDiff    1
+
+#bcc/selfdiffusion actenergy QDRot  4.6  .01 
+#bcc/selfdiffusion actenergy QDDiff 4.0  1
+#bcc/selfdiffusion actenergy QVDiff 4.2  1 
+
+bcc/selfdiffusion bondenergy VV -2 
+bcc/selfdiffusion bondenergy DD 2 
+bcc/selfdiffusion bondenergy DV 0 
+
+# T: simulation temperature
+temperature      0.0	
+
+
+sweep 		random 
+#solve_style 	tree
+sector 		yes
+diag_style	bcc_test
+diag_style      energy
+stats           100.0
+
+dump    1 text 1000 dump.diff1 id i1 x y z
+diag_style       cluster filename cluster.dat
+
+run	1000
+
+

@@ -1,0 +1,38 @@
+SPPARKS (27 Nov 2024)
+Created box = (0 0 0) to (500 500 500)
+  1 by 1 by 1 processor grid
+Creating sites ...
+  250000000 sites
+  250000000 sites have 14 neighbors
+arg[0] = i1, siteindex = 1
+Setting site values ...
+  250000000 settings made for i1
+arg[0] = i1, siteindex = 1
+Setting site values ...
+  49979 settings made for i1
+arg[0] = i1, siteindex = 1
+Setting site values ...
+  2455 settings made for i1
+Setting up run ...
+Running with 32-bit site IDs
+Memory usage per processor = 22890 Mbytes
+      Time    Naccept    Nreject    Nsweeps        CPU     Energy     Nclust        <N>        <R>
+         0          0          0          0          0        127      52422    4768.99    1.01206
+   1.07143     521379 3749478621         15   1.73e+04        119      52355    4775.09    1.01207
+   2.07143    1007269 7248992731         29   2.94e+04        116      52286    4781.39    1.01207
+         3    1458071 10498541929         42      5e+04        105      52231    4786.43    1.01211
+         4    1943095 13998056905         56   9.27e+04        126      52183    4790.83    1.01212
+         5    2426831 17497573169         70    1.1e+05         98      52122    4796.44    1.01209
+   6.07143    2943656 21247056344         85   1.37e+05        111      52052    4802.89    1.01213
+   7.07143    3424777 24746575223         99   1.55e+05        132      51986    4808.99    1.01217
+   8.07143    3906156 28246093844        113   1.92e+05        124      51946    4812.69    1.01217
+   9.07143    4385337 31745614663        127   2.28e+05        137      51880    4818.81    1.01219
+   10.0714    4864294 35245135706        141   4.96e+05        119      51820    4824.39     1.0122
+Loop time of 495976 on 1 procs
+
+Solve time (%) = 4667.03 (0.940979)
+Update time (%) = 0 (0)
+Comm  time (%) = 0 (0)
+Outpt time (%) = 491309 (99.059)
+App   time (%) = 0 (0)
+Other time (%) = 0.00517082 (1.04256e-06)
