@@ -1,0 +1,90 @@
+SPPARKS (27 Nov 2024)
+#
+# SEED:
+seed  78901
+#
+# Declare app
+app_style bcc/selfdiffusion
+#
+dimension	 3
+#
+boundary p p p
+#
+lattice		 bcc 1.0
+region		 box block 0 50 0 50 0 50 
+create_box	 box
+Created box = (0 0 0) to (50 50 50)
+  1 by 1 by 1 processor grid
+create_sites	 box 
+Creating sites ...
+  250000 sites
+  250000 sites have 8 neighbors
+
+set             i1 value 2                	 # set all to reg 
+  250000 settings made for i1
+set             i1 range 3 8 fraction 0.0000001      # set fraction to dumbbells, 3 to 8 
+  0 settings made for i1
+set             i1 value 1 fraction   0.01      # set fraction to vacancies 
+  2459 settings made for i1
+
+bcc/selfdiffusion rate V_anniAtSinks 0.0
+bcc/selfdiffusion rate D_anniAtSinks 0.00001
+bcc/selfdiffusion rate VD_mutualAnni 0.001 
+
+bcc/selfdiffusion rate Freq_DRot     0.01
+bcc/selfdiffusion rate Freq_DDiff    1 
+bcc/selfdiffusion rate Freq_VDiff    1
+
+#bcc/selfdiffusion actenergy QDRot  4.6  .01 
+#bcc/selfdiffusion actenergy QDDiff 4.0  1
+#bcc/selfdiffusion actenergy QVDiff 4.2  1 
+
+bcc/selfdiffusion bondenergy VV -2 
+bcc/selfdiffusion bondenergy DD 2 
+bcc/selfdiffusion bondenergy DV 0 
+
+# T: simulation temperature
+temperature      0.0	
+
+
+sweep 		random 
+#solve_style 	tree
+sector 		yes
+diag_style	bcc_test
+diag_style      energy
+stats           100.0
+
+dump    1 text 1000 dump.diff1 id i1 x y z
+diag_style       cluster filename cluster.dat
+
+run	1000
+Event frequencies in THz are:
+    EF_rot = 0.000000, EF_nntr = 0.000000 and EF_vdiff = 1.000000
+P_rot = 0.000000, P_nntr = 0.000000 P_vdiff = 1.000000 and P_hi = 1.000000e+12
+1 sweep = 1.000000e-12 sec
+
+Setting up run ...
+Running with 32-bit site IDs
+Memory usage per processor = 20 Mbytes
+      Time    Naccept    Nreject    Nsweeps        CPU    NumD    NumV #d-anni #v-anni #dv-anni    #rot   #nntr    #Vnn     Energy     Nclust        <N>        <R>
+         0          0          0          0          0       0    2459       0       0        0       0       0       0        -194       2363    105.798    1.03651
+       100      62610   24937390        100      0.509       0    2459       0       0        0       0       0   62610       -3760        875    285.714    1.44511
+       200      77449   49922551        200      0.997       0    2459       0       0        0       0       0   77449       -4332        767    325.945    1.52238
+       300      85818   74914182        300        1.5       0    2459       0       0        0       0       0   85818       -4558        732     341.53    1.54693
+       400      92250   99907750        400       1.98       0    2459       0       0        0       0       0   92250       -4660        720    347.222    1.55528
+       500      98482  124901518        500       2.45       0    2459       0       0        0       0       0   98482       -4748        700    357.143    1.57009
+       600     103389  149896611        600       2.94       0    2459       0       0        0       0       0  103389       -4864        685    364.964    1.58157
+       700     107473  174892527        700       3.43       0    2459       0       0        0       0       0  107473       -4936        675     370.37     1.5894
+       800     111295  199888705        800       3.92       0    2459       0       0        0       0       0  111295       -5000        667    374.813    1.59522
+       900     114637  224885363        900       4.39       0    2459       0       0        0       0       0  114637       -5088        656    381.098    1.60444
+      1000     117079  249882921       1000       4.98       0    2459       0       0        0       0       0  117079       -5122        652    383.436    1.60759
+Loop time of 4.98274 on 1 procs
+
+Solve time (%) = 2.49454 (50.0636)
+Update time (%) = 0 (0)
+Comm  time (%) = 0 (0)
+Outpt time (%) = 2.48807 (49.9339)
+App   time (%) = 0 (0)
+Other time (%) = 0.000126123 (0.00253121)
+
+
