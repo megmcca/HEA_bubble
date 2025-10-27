@@ -1,0 +1,11 @@
+# Meg's files
+HEA_bubble.code-workspace
+
+# Compiled and run files
+src/Obj_appleM3.serial/
+src/cluster.dat
+src/dump*
+src/spk
+src/spk_appleM3.serial
+src/log.*
+
