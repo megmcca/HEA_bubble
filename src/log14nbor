@@ -1,0 +1,93 @@
+SPPARKS (27 Nov 2024)
+#
+# SEED:
+seed  59206
+#
+# Declare app
+app_style bcc/selfdiffusion
+#
+dimension	 3
+#
+boundary p p p
+#
+#lattice		 bcc/dumb 1.0
+lattice		 bcc 1.0
+region		 box block 0 200 0 100 0 100 
+create_box	 box
+Created box = (0 0 0) to (200 100 100)
+  1 by 1 by 1 processor grid
+create_sites	 box 
+Creating sites ...
+  4000000 sites
+  4000000 sites have 8 neighbors
+
+set             i1 value 2                	  # set all to reg 
+  4000000 settings made for i1
+set             i1 range 3 8 fraction 0.001      # set fraction to dumbbells, 3 to 8 
+  4014 settings made for i1
+set             i1 value 1 fraction   0.001        # set fraction to vacancies 
+  3996 settings made for i1
+
+bcc/selfdiffusion rate V_anniAtSinks 0.0
+bcc/selfdiffusion rate D_anniAtSinks 0.0
+bcc/selfdiffusion rate VD_mutualAnni 0.1 
+bcc/selfdiffusion rate Rrot          1.000000
+bcc/selfdiffusion rate RTransRot     1.0000000
+bcc/selfdiffusion rate V_DiffCoeff   1.0
+
+#bcc/selfdiffusion actenergy QDRot  4.6  10.0
+#bcc/selfdiffusion actenergy QDDiff 0    1000.0
+#bcc/selfdiffusion actenergy QVDiff 14.2  1000.0 
+
+bcc/selfdiffusion actenergy QDRot  0  1 
+bcc/selfdiffusion actenergy QDDiff 0  0
+bcc/selfdiffusion actenergy QVDiff 0  0 
+
+bcc/selfdiffusion bondenergy VV 0 
+bcc/selfdiffusion bondenergy DD 0 
+bcc/selfdiffusion bondenergy DV 0 
+
+# T: simulation temperature
+#temperature 	 0.0
+temperature      0	
+
+
+sweep 		random 
+#solve_style 	tree
+sector 		yes
+diag_style	bcc_test
+diag_style      energy
+#diag_style	cluster
+stats            5.0
+
+dump    1 text 5 dump.diff id i1 x y z
+diag_style       cluster filename clusterd.dat
+
+run	50	
+Setting up run ...
+Running with 32-bit site IDs
+Memory usage per processor = 276.75 Mbytes
+      Time    Naccept    Nreject    Nsweeps        CPU #d-anni #v-anni #dv-anni    #rot   #nntr    #Vnn     Energy     Nclust        <N>        <R>
+         0          0          0          0          0       0       0        0       0       0       0           0       7994    500.375    1.02014
+         5     834807  279165193         70       30.6       0       0       55  278866  278342  277544           0       7878    507.743    1.02064
+   10.0714    1670472  562329528        141       62.4       0       0      112  558097  557056  555207           0       7765    515.132     1.0209
+   15.0714    2479242  841520758        211       91.5       0       0      174  828136  826538  824394           0       7641    523.492    1.02124
+        20    3268329 1116731671        280        124       0       0      216 1092000 1089903 1086210           0       7558    529.241    1.02144
+        25    4057541 1395942459        350        155       0       0      258 1355525 1352938 1348820           0       7477    534.974    1.02157
+        30    4837863 1675162137        420        186       0       0      307 1616101 1613030 1608425           0       7375    542.373    1.02201
+        35    5606113 1954393887        490        218       0       0      364 1872797 1869252 1863700           0       7271    550.131    1.02197
+        40    6363564 2233636436        560        250       0       0      413 2125915 2121900 2115336           0       7171    557.802    1.02235
+   45.0714    7121644 2516878356        631        280       0       0      464 2379357 2374936 2366887           0       7062    566.412    1.02295
+   50.0714    7857953 2796142047        701        311       0       0      507 2624699 2619840 2612907           0       6983     572.82    1.02295
+Loop time of 311.484 on 1 procs
+
+Solve time (%) = 27.3278 (8.77341)
+Update time (%) = 0 (0)
+Comm  time (%) = 0 (0)
+Outpt time (%) = 284.156 (91.2265)
+App   time (%) = 0 (0)
+Other time (%) = 0.000145912 (4.68441e-05)
+
+
+
+
