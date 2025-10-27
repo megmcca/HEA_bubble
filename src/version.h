@@ -1,0 +1,1 @@
+#define SPPARKS_VERSION "27 Nov 2024"
