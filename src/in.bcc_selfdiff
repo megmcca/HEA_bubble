@@ -43,11 +43,11 @@ sweep 		random
 sector 		yes
 diag_style	bcc_test
 diag_style      energy
-stats           100.0
+stats           10.0
 
 dump    1 text 1000 dump.diff1 id i1 x y z
-diag_style       cluster filename cluster.dat
+diag_style       cluster filename cluster.dat site/size
 
-run	1000
+run	100
 
 

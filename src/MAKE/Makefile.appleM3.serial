@@ -45,7 +45,7 @@ MPI_LIB =	../STUBS/libmpi.a
 
 JPG_INC =  
 JPG_PATH = 
-JPG_LIB = /Users/vtikare/Documents/Software/jpeg-9f/lib/libjpeg.a 
+JPG_LIB = # /Users/vtikare/Documents/Software/jpeg-9f/lib/libjpeg.a 
 
 # build rules and dependencies
 # no need to edit this section
