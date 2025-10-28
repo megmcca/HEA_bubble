@@ -7,5 +7,6 @@ src/cluster.dat
 src/dump*
 src/spk
 src/spk_appleM3.serial
-src/log.*
+src/log.spparks
+
 

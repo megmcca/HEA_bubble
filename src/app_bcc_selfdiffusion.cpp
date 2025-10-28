@@ -378,9 +378,11 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
   int j, nbor;
   double P, P_event;
 
-  // if site is a vacancy
+  // if site is a vacancy 
   if (lattice[i] == 1) {
-    //printf("bsize[%i] = %f\n", i, bsize[i]);
+    if (me == 0) {
+      if (bsize[i] != 247541.0) printf("bsize[%i] = %f\n", i, bsize[i]);
+    }
     // annihilation of vacancies at sinks
     P = random->uniform();
     if (P <= V_anniAtSinks) { 
