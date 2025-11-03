@@ -32,7 +32,7 @@ using namespace SPPARKS_NS;
 
 // same as in lattice.cpp
 
-enum{NONE,LINE_2N,SQ_4N,SQ_8N,TRI,SC_6N,SC_26N,FCC,BCC,DIAMOND,
+enum{NONE,LINE_2N,SQ_4N,SQ_8N,TRI,SC_6N,SC_26N,FCC,DIAMOND,BCC,BCC_TETRA,
      BCC_DUMB,BCC_OCTA_TETRA,FCC_OCTA_TETRA,RANDOM_1D,RANDOM_2D,RANDOM_3D};
 
 enum{BOX,REGION};
@@ -152,11 +152,13 @@ void CreateSites::command(int narg, char **arg)
     latticeflag = 0;
   }
 
+  printf("latstyle = %i\n", latstyle);
 
   if (latstyle == LINE_2N ||
       latstyle == SQ_4N || latstyle == SQ_8N || latstyle == TRI ||
       latstyle == SC_6N || latstyle == SC_26N ||
       latstyle == FCC || latstyle == BCC || latstyle == DIAMOND ||
+      latstyle == BCC_TETRA ||
       latstyle == BCC_DUMB || latstyle == BCC_OCTA_TETRA || 
       latstyle == FCC_OCTA_TETRA) {
 
@@ -536,6 +538,7 @@ void CreateSites::structured_connectivity()
   else if (latstyle == BCC) maxneigh = 8;
   else if (latstyle == DIAMOND) maxneigh = 4;
   else if (latstyle == BCC_DUMB) maxneigh = 14;
+  else if (latstyle == BCC_TETRA) maxneigh = 32;
   else if (latstyle == BCC_OCTA_TETRA) maxneigh = 38;
   else if (latstyle == FCC_OCTA_TETRA) maxneigh = 26;
 
@@ -552,6 +555,7 @@ void CreateSites::structured_connectivity()
   // for non-periodic dims, site must be in global box and not across boundary
   // for style = REGION, check if site is in region
   // BCC_DUMB has 8 nn and 6 nnn neighbors
+  // BCC_TETRA is special case, # of neighs not same for all sites
   // BCC_OCTA_TETRA is special case, # of neighs not same for all sites
   // FCC_OCTA_TETRA is special case, # of neighs not same for all sites
 
@@ -566,6 +570,9 @@ void CreateSites::structured_connectivity()
       if ((id[i]-1) % 20 < 2) max = maxneigh; //regular BCC sites have 8 bcc, 4 oct & 24 tet neighbors
       else if ((id[i]-1) % 20 < 8) max = 14; //Oct sites have 4 oct, 4 tet & 6 bcc neighbors
       else max = 10; //Tet sites have 4 tet, 2 Oct and 4 bcc neighbors
+    } else if (latstyle == BCC_TETRA) {
+      if ((id[i]-1) % 14 < 2) max = maxneigh;
+      else max = 8;
     } else if (latstyle == FCC_OCTA_TETRA) {
       if ((id[i]-1) % 16 < 8) max = maxneigh;
       else max = 14;
@@ -1283,10 +1290,10 @@ void CreateSites::offsets(double **basis)
   else if (latstyle == BCC_DUMB)
     for (int m = 0; m < nbasis; m++){
       offsets_3d(m,basis,sqrt(3.0)/2.0*xlattice,sqrt(3.0)/2.0*xlattice,
-		 8,&cmap[m][0]);
-      offsets_3d(m,basis,1.0*xlattice,1.0*xlattice,6,&cmap[m][8]);
+		 8,&cmap[m][0]); // find nn 
+      offsets_3d(m,basis,1.0*xlattice,1.0*xlattice,6,&cmap[m][8]); // find nnn
 /*
- *  printf("\n\n ----> DEBUG create_sites.cpp BCC_OCTA_TETRA \n\n");
+ *  printf("\n\n ----> DEBUG create_sites.cpp BCC_DUMB \n\n");
  *    for (int m = 0; m < 2; m++){
  * 
  *     printf("\n START m %i",m);
@@ -1303,8 +1310,40 @@ void CreateSites::offsets(double **basis)
  */
  
   }
+  else if (latstyle == BCC_TETRA) {
+    printf("\n\n ----> DEBUG create_sites.cpp BCC_TETRA (new!) \n\n");
+    for (int m = 0; m < 2; m++) { //for regular BCC sites
+      offsets_3d(m,basis,sqrt(3.0)/2.0*xlattice,sqrt(3.0)/2.0*xlattice,
+		 8,&cmap[m][0]); //find BCC neighbors
+      offsets_3d(m,basis,sqrt(5.0)/4.0*xlattice,sqrt(5.0)/4.0*xlattice,
+		 24,&cmap[m][8]); //find Tet neighbors
+    }
+    for (int m = 2; m < nbasis; m++) { //for Tet sites
+      offsets_3d(m,basis,sqrt(2.0)/4.0*xlattice,sqrt(2.0)/4.0*xlattice,
+		 4,&cmap[m][0]); // find Tet neighbors
+      offsets_3d(m,basis,sqrt(5.0)/4.0*xlattice,sqrt(5.0)/4.0*xlattice,
+		 4,&cmap[m][4]); // find BCC neighbors 
+    }
+/*
+ *  printf("\n\n ----> DEBUG create_sites.cpp BCC_TETRA \n\n");
+ *  printf("nbasis = %i\n", nbasis);
+ *    for (int m = 0; m < nbasis; m++){
+ * 
+ *     printf("\n START m %i",m);
+ *      for (int n = 0; n < 32; n++){
+ * 
+ *       printf("\n START n %i", n);
+ *       for (int o = 0; o < 4; o++){
+ *              printf("\n %i = cmap[%i=basis][%i=n_basis][%i=ind] ", cmap[m][n][o], m, n, o);
+ *       }
+ *       printf("\n END n %i", n);
+ *     }
+ *     printf("\n END m %i", m);
+ *   }
+ */ 
+  }
   else if (latstyle == BCC_OCTA_TETRA) {
-    printf("\n\n ----> DEBUG create_sites.cpp BCC_OCTA_TETRA (new!) \n\n");
+  //  printf("\n\n ----> DEBUG create_sites.cpp BCC_OCTA_TETRA (new!) \n\n");
     for (int m = 0; m < 2; m++) { //for regular BCC sites
       offsets_3d(m,basis,sqrt(3.0)/2.0*xlattice,sqrt(3.0)/2.0*xlattice,
 		 8,&cmap[m][0]); //find BCC neighbors

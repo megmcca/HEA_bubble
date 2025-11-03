@@ -25,7 +25,7 @@ using namespace SPPARKS_NS;
 
 // same as in other files
 
-enum{NONE,LINE_2N,SQ_4N,SQ_8N,TRI,SC_6N,SC_26N,FCC,BCC,DIAMOND,
+enum{NONE,LINE_2N,SQ_4N,SQ_8N,TRI,SC_6N,SC_26N,FCC,DIAMOND,BCC,BCC_TETRA,
        BCC_DUMB,BCC_OCTA_TETRA,FCC_OCTA_TETRA,RANDOM_1D,RANDOM_2D,RANDOM_3D};
 
 /* ---------------------------------------------------------------------- */
@@ -47,6 +47,7 @@ Lattice::Lattice(SPPARKS *spk, int narg, char **arg) : Pointers(spk)
   else if (strcmp(arg[0],"bcc") == 0) style = BCC;
   else if (strcmp(arg[0],"diamond") == 0) style = DIAMOND;
   else if (strcmp(arg[0],"bcc/dumb") == 0) style = BCC_DUMB;
+  else if (strcmp(arg[0],"bcc/tetra") == 0) style = BCC_TETRA;
   else if (strcmp(arg[0],"bcc/octa/tetra") == 0) style = BCC_OCTA_TETRA;
   else if (strcmp(arg[0],"fcc/octa/tetra") == 0) style = FCC_OCTA_TETRA;
   else if (strcmp(arg[0],"random/1d") == 0) style = RANDOM_1D;
@@ -61,7 +62,8 @@ Lattice::Lattice(SPPARKS *spk, int narg, char **arg) : Pointers(spk)
 
   if (style == LINE_2N || style == SQ_4N || style == SQ_8N ||
       style == TRI || style == SC_6N || style == SC_26N ||
-      style == FCC || style == BCC || style == DIAMOND || 
+      style == FCC || style == DIAMOND || 
+      style == BCC || style == BCC_TETRA || 
       style == BCC_DUMB || style == BCC_OCTA_TETRA || 
       style == FCC_OCTA_TETRA) {
     if (narg != 2) error->all(FLERR,"Illegal lattice command");
@@ -87,6 +89,7 @@ Lattice::Lattice(SPPARKS *spk, int narg, char **arg) : Pointers(spk)
   if ((style == SC_6N || style == SC_26N || style == FCC || 
        style == BCC || style == DIAMOND || style == BCC_DUMB ||
        style == FCC_OCTA_TETRA || style == BCC_OCTA_TETRA ||
+       style == BCC_TETRA ||
        style == RANDOM_3D) && domain->dimension != 3)
     error->all(FLERR,"Lattice style does not match dimension");
 
@@ -107,6 +110,21 @@ Lattice::Lattice(SPPARKS *spk, int narg, char **arg) : Pointers(spk)
   } else if (style == BCC_DUMB) {
     add_basis(0.0,0.0,0.0);
     add_basis(0.5,0.5,0.5);
+  } else if (style == BCC_TETRA) {
+    add_basis(0.0,0.0,0.0);
+    add_basis(0.5,0.5,0.5);
+    add_basis(0.0,0.5,0.25);
+    add_basis(0.0,0.25,0.5);
+    add_basis(0.0,0.5,0.75);
+    add_basis(0.0,0.75,0.5);
+    add_basis(0.5,0.25,0.0);
+    add_basis(0.25,0.5,0.0);
+    add_basis(0.5,0.75,0.0);
+    add_basis(0.75,0.5,0.0);
+    add_basis(0.5,0.0,0.25);
+    add_basis(0.25,0.0,0.5);
+    add_basis(0.5,0.0,0.75);
+    add_basis(0.75,0.0,0.5);
   } else if (style == BCC_OCTA_TETRA) {
     add_basis(0.0,0.0,0.0);
     add_basis(0.5,0.5,0.5);
