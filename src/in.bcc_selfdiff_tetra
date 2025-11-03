@@ -9,6 +9,7 @@ dimension	 3
 #
 boundary p p p
 #
+# hello from meg
 lattice		 bcc/tetra 1.0
 region		 box block 0 50 0 50 0 50 
 create_box	 box
