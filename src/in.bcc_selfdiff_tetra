@@ -1,4 +1,4 @@
-i1 value 1 fraction   0.01 #
+#
 # SEED:
 seed  78901
 #
@@ -9,7 +9,7 @@ dimension	 3
 #
 boundary p p p
 #
-lattice		 bcc 1.0
+lattice		 bcc/tetra 1.0
 region		 box block 0 50 0 50 0 50 
 create_box	 box
 create_sites	 box 
@@ -43,11 +43,11 @@ sweep 		random
 sector 		yes
 diag_style	bcc_test
 diag_style      energy
-stats           10.0
+stats           1.0
 
 dump    1 text 1000 dump.diff1 id i1 x y z
 diag_style       cluster filename cluster.dat site/size
 
-run	100
+run	10
 
 
