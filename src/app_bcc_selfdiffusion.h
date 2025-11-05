@@ -52,6 +52,8 @@ class AppBccSelfdiffusion : public AppLattice {
   int naccept_Vnn;
   int NumD;
   int NumV;
+  int NumHr;
+  int NumHi;
 
  private:
   int engstyle;
@@ -89,12 +91,16 @@ class AppBccSelfdiffusion : public AppLattice {
   double Rrot = 0.0;             // Onsite rotation  
   double RTransRot = 0.0;        // Dumbbell diffusion 
   double RVDiff = 0.0;	 	 // Vacancy diffusion  
+  double RHrDiff = 0.0;	 	 // He diffusion  
+  double RHiDiff = 0.0;	 	 // He diffusion  
 
   // Given frequencies of events, the relative probability of various
   // events.
   double P_rot = 0.0;		 
   double P_nntr = 0.0;
   double P_vdiff = 0.0;
+  double P_Hrdiff = 0.0;
+  double P_Hidiff = 0.0;
 
   // Activation energy and attempt frequency for events.
   double Q_DRot = 0.0;		
@@ -103,12 +109,20 @@ class AppBccSelfdiffusion : public AppLattice {
   double G_DDiff = 0.0;
   double Q_VDiff = 0.0; 
   double G_VDiff = 0.0;
+  double Q_HrDiff = 0.0; 
+  double G_HrDiff = 0.0;
+  double Q_HiDiff = 0.0; 
+  double G_HiDiff = 0.0;
 
   // These variables are bond energies between DD, VV and DV.
   // They are initialized with default values.
   double VV = 1.0;	//Vacancy-Vacancy neighbor
   double DD = 2.0;	//Dumbbell-Dumbbell neighbor
   double DV = -1.0;	//Dumbbell-Vacancy neighbor
+  double VHi = -1.0;	//Vacancy-He on reg BCC neighbor
+  double VHr = -1.0;	//Vacancy-He on TETRA neighbor
+  double HrHr = -1.0;	//He on reg BCC neighbors
+  double HiHi = -1.0;	//He on TETRA neighbors
 
   void site_event_linear(int, class RandomPark *);
 

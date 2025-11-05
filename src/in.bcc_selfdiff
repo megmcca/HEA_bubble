@@ -1,4 +1,3 @@
-i1 value 1 fraction   0.01 #
 # SEED:
 seed  78901
 #
@@ -9,19 +8,19 @@ dimension	 3
 #
 boundary p p p
 #
-# another hello from meg!
 lattice		 bcc 1.0
 region		 box block 0 50 0 50 0 50 
 create_box	 box
 create_sites	 box 
 
-set             i1 value 2                	 # set all to reg 
-set             i1 range 3 8 fraction 0.0000001      # set fraction to dumbbells, 3 to 8 
-set             i1 value 1 fraction   0.01      # set fraction to vacancies 
+set             i1 value 9                	 # set all to reg 
+set             i1 range 3 8 fraction 0.01      # set fraction to dumbbells, 3 to 8 
+set             i1 value 2 fraction   0.01      # set fraction to vacancies 
+set             i1 value 10 fraction   0.01      # set fraction to Hr 
 
-bcc/selfdiffusion rate V_anniAtSinks 0.0
-bcc/selfdiffusion rate D_anniAtSinks 0.00001
-bcc/selfdiffusion rate VD_mutualAnni 0.001 
+bcc/selfdiffusion rate V_anniAtSinks 0.01
+bcc/selfdiffusion rate D_anniAtSinks 0.001
+bcc/selfdiffusion rate VD_mutualAnni 0.01 
 
 bcc/selfdiffusion rate Freq_DRot     0.01
 bcc/selfdiffusion rate Freq_DDiff    1 
@@ -46,7 +45,7 @@ diag_style	bcc_test
 diag_style      energy
 stats           10.0
 
-dump    1 text 1000 dump.diff1 id i1 x y z
+dump    1 text 10 dump.diff1 id i1 x y z
 diag_style       cluster filename cluster.dat site/size
 
 run	100

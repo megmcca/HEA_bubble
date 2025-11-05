@@ -30,11 +30,16 @@ enum{ANNIATSINK,ANNI,ONSITEROT,NNTRANSROT,EXCHANGE};
 
 #define DELTAEVENT 100000
 
-// This app is based on the diffusion_multiphase app
+// This app is based on the bcc_selfdiffusion app 
 // These are the significant changes 
-// 1. Three components: vacancy, Metal (M) atoms and M-M dumbbells
-// 2. All three can exchange with each other 
-// 3. Vacancies and M-M dumbbells can be annihilated
+// 1. Six components: empty interstial sites, vacancies, Metal (M) atoms, 
+//    M-M dumbbells, He atoms on regular sites (Hr), He atoms on 
+//    interstial sites.
+// 2. Vacancies can exchange with He and M and they can be annihilated
+//    by Hi hopping into them.
+// 3. Hi can hop into empty interstitial sites or into vacancies (#2)
+// 4. Dumbbells can exchange with M. 
+// 5. Vacancies and M-M dumbbells can be annihilated
 
 /* ---------------------------------------------------------------------- */
 
@@ -43,8 +48,8 @@ AppBccSelfdiffusion::AppBccSelfdiffusion(SPPARKS *spk, int narg, char **arg) :
 {
   // need to double check these values
 
-  ninteger = 2;
-  ndouble = 1;
+  ninteger = 1;
+  ndouble = 2;
   delpropensity = 2;
   delevent = 1;
   allow_kmc = 1;
@@ -71,7 +76,7 @@ AppBccSelfdiffusion::AppBccSelfdiffusion(SPPARKS *spk, int narg, char **arg) :
   naccept_danni = naccept_vanni = naccept_dvanni = 0;
   naccept_rot = naccept_nntr = naccept_nnt = naccept_nnntr = 0;
   naccept_Vnn = 0;
-  NumD = NumV = 0;
+  NumD = NumV = NumHr = NumHi = 0;
 
 }
 
@@ -140,6 +145,10 @@ void AppBccSelfdiffusion::parse_bccselfdiffusion(int narg, char **arg)
             RTransRot = rate_value * THz;
         } else if (rate_name == "Freq_VDiff") {
             RVDiff = rate_value * THz;
+        } else if (rate_name == "Freq_HrDiff") {
+            RHrDiff = rate_value * THz;
+        } else if (rate_name == "Freq_HiDiff") {
+            RHiDiff = rate_value * THz;
         } else {
             error->all(FLERR, ("Unknown bcc/selfdiffusion rate name: " + rate_name).c_str());
         }
@@ -163,6 +172,12 @@ void AppBccSelfdiffusion::parse_bccselfdiffusion(int narg, char **arg)
         } else if (actenergy == "QVDiff") {
             Q_VDiff = actenergy_value;
             G_VDiff = G_value * THz;
+        } else if (actenergy == "QHrDiff") {
+            Q_HrDiff = actenergy_value;
+            G_HrDiff = G_value * THz;
+        } else if (actenergy == "QHiDiff") {
+            Q_HiDiff = actenergy_value;
+            G_HiDiff = G_value * THz;
         } else {
             error->all(FLERR, ("Unknown bcc/selfdiffusion actenergy name: "+std::to_string(actenergy_value)).c_str());
         }
@@ -182,6 +197,14 @@ void AppBccSelfdiffusion::parse_bccselfdiffusion(int narg, char **arg)
             DD = bondenergy_value;
         } else if (energy == "DV") {
             DV = bondenergy_value;
+        } else if (energy == "VHi") {
+            VHi = bondenergy_value;
+        } else if (energy == "VHr") {
+            VHr = bondenergy_value;
+        } else if (energy == "HrHr") {
+            HrHr = bondenergy_value;
+        } else if (energy == "HiHi") {
+            HiHi = bondenergy_value;
         } else {
             error->all(FLERR, ("Unknown bcc/selfdiffusion energy name: "+std::to_string(bondenergy_value)).c_str());
         }
@@ -199,7 +222,7 @@ void AppBccSelfdiffusion::parse_bccselfdiffusion(int narg, char **arg)
 
 void AppBccSelfdiffusion::grow_app()
 {
-  lattice = iarray[0];  //vac=1, reg=2, dumbbell=3 - 8: i1
+  lattice = iarray[0];  //empty=1, vac=2, dumbbell=3-8, M=9-18, Hr=19, Hi=20: i1
   bsize = darray[0];	//size of cluster that site is in
 }
 
@@ -230,41 +253,20 @@ void AppBccSelfdiffusion::init_app()
    // Count the number of dumbbells and vacancies to adjust the jump frequency accordingly
    int site;
    for (site = 0; site < nlocal; site++){
-       if (lattice[site] == 1) NumV++;
-       else if (lattice[site] > 2) NumD++;
+       if (lattice[site] == 2) NumV++;
+       else if (lattice[site] > 2 && lattice[site] < 9) NumD++;
+       else if (lattice[site] == 19) NumHr++;
+       else if (lattice[site] == 20) NumHi++;
    }
    // For verification
    //printf("NumD = %i, NumV = %i\n", NumD, NumV);
 
-   // If there are no dumbbells and/or no vacancies, then set corresponding
-   // rates = 0.
    if(Rrot || RTransRot || RVDiff){
-     if (!NumD) {
-        Rrot = 0.0;
-        RTransRot = 0.0;
-     }
-     if (!NumV) {
-        RVDiff = 0.0;
-     }
-
-     // Rescale rates to make more efficient by setting the highest to have
-     // rate  = 1.0
-     if (RTransRot >= Rrot && RTransRot >= RVDiff)
-        P_hi = RTransRot;
-     else if (RVDiff >= RTransRot && RVDiff >= Rrot)
-        P_hi = RVDiff;
-     else P_hi = Rrot;
-     
-     sweep = 1.0/P_hi;
-
-     P_rot = Rrot/P_hi;
-     P_nntr = RTransRot/P_hi;
-     P_vdiff = RVDiff/P_hi;
-     if (logfile) { 
-            // Normalized by P_hi, so conversion to THz is not needed.
-            fprintf(logfile, "Event frequencies in THz are:\n");
-            fprintf(logfile, "    EF_rot = %f, EF_nntr = %f and EF_vdiff = %f\n", P_rot,P_nntr,P_vdiff);
-     }
+     P_rot = Rrot;
+     P_nntr = RTransRot;
+     P_vdiff = RVDiff;
+     P_Hrdiff = RHrDiff;
+     P_Hidiff = RHiDiff;
    }
    else {
      if(temperature <= 0.0)
@@ -279,39 +281,56 @@ void AppBccSelfdiffusion::init_app()
             fprintf(logfile, "Event frequencies in THz are:\n");
             fprintf(logfile, "    EF_rot = %f, EF_nntr = %f and EF_vdiff = %f\n", P_rot/THz,P_nntr/THz,P_vdiff/THz);
      }
-
+   }
     // If there are no dumbbells and/or no vacancies, then set corresponding
     // jump frequency, P_* =0.0. 
-     if(!NumD){
+     if (!NumD) {
         P_rot = 0.0;
         P_nntr = 0.0;
      }
-     if(!NumV){
+     if (!NumV) {
         P_vdiff = 0.0;
      }
+     if (!NumHr) {
+        P_Hrdiff = 0.0;
+     }
+     if (!NumHi) {
+        P_Hidiff = 0.0;
+     }
+
+     // Rescale rates to make more efficient by setting the highest to have
+     // rate  = 1.0
+     P_hi = P_nntr;
+     if (P_rot > P_hi)
+	P_hi = P_rot;
+     if (P_vdiff > P_hi)
+	P_hi = P_vdiff;
+     if (P_Hrdiff > P_hi);
+	P_hi = P_Hrdiff;
+     if (P_Hidiff > P_hi);
+	P_hi = P_Hidiff;
+  
+     sweep = 1.0/P_hi;
 
      // Rescale jump frequencies to make more efficient by setting the highest to have
      // jump frequency = 1.0
-     if (P_nntr >= P_rot && P_nntr >= P_vdiff)
-	P_hi = P_nntr;
-     else if (P_vdiff >= P_nntr && P_vdiff >= P_rot)
-	P_hi = P_vdiff;
-     else P_hi = P_rot;
-
-     sweep = 1/P_hi;
-
      P_rot = P_rot/P_hi;
      P_nntr = P_nntr/P_hi;
      P_vdiff = P_vdiff/P_hi;
-   }
+     P_Hrdiff = P_Hrdiff/P_hi;
+     P_Hidiff = P_Hidiff/P_hi;
+
    if (logfile) { 
-            fprintf(logfile, "P_rot = %f, P_nntr = %f P_vdiff = %f and P_hi = %.6Le\n", P_rot,P_nntr,P_vdiff,P_hi);
+            fprintf(logfile, "To obtain the event frequency in THz, multiply the individual P_*'s by the ");
+            fprintf(logfile, "Rate of attempts = %.6Le THz\n", P_hi/1e12);
+            fprintf(logfile, "P_rot = %f, P_nntr = %f P_vdiff = %f and P_hi = %.6Le\n", P_rot,P_nntr,P_vdiff);
             fprintf(logfile, "1 sweep = %.6Le sec\n\n", sweep);
    }
 }
 
 /* ----------------------------------------------------------------------
    setup before each run
+
 ------------------------------------------------------------------------- */
 
 void AppBccSelfdiffusion::setup_app()
@@ -338,15 +357,33 @@ double AppBccSelfdiffusion::site_energy(int i)
 
 
    double energy = 0.0;
+   int i_V, i_D, i_M, i_Hr, i_Hi;
+   int j_V, j_D, j_M, j_Hr, j_Hi;
+
+   i_V = i_D = i_M = i_Hr = i_Hi = 0;
+   j_V = j_D = j_M = j_Hr = j_Hi = 0;
+  
    int ip = lattice[i];
+   if (ip == 2) i_V = 1;
+   else if (ip > 2 && ip < 9) i_D = 1;
+   else if (ip > 8 && ip < 19) i_M = 1;
+   else if (ip == 19) i_Hr = 1;
+   else if (ip == 20) i_Hi = 1;
+
    for (int j = 0; j < maxneigh; j++){
       int nj = neighbor[i][j];
       int jp = lattice[nj];
-      if (ip>2 && jp>2) //if neighboring dumbbells
+      if (jp == 2) j_V = 1;
+      else if (jp > 2 && jp < 9) j_D = 1;
+      else if (jp > 8 && jp < 19) j_M = 1;
+      else if (jp == 19) j_Hr = 1;
+      else if (jp == 20) j_Hi = 1;
+
+      if (i_D && j_D) //if neighboring dumbbells
           energy += DD;
-      else if (ip==1 && jp==1) // if neighboring vacancies
+      else if (i_V && j_V) // if neighboring vacancies
           energy += VV;
-      else if ((ip>2 && jp==1) || (ip==1 && jp>2)) //if dumbbell and vac
+      else if ((i_D && j_V) || (i_V && j_D)) //if dumbbell and vac
           energy += DV;
       }
    return 0.5*energy;
@@ -359,15 +396,20 @@ double AppBccSelfdiffusion::site_energy(int i)
 void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
 {
 
-  // This app assigns spin = 1 for Vacancy, 2 for Metal, 3 to 8 for dumbbells in
-  // 6 <110> orientations with all 8 spins on regular BCC sites.
+  // This app assigns spin = 0 for empty interstitials, 1 for empty 
+  // interstitial, 2 for vacancy, 3 to 8 for dumbbells in 6 <110> 
+  // orientations, 9-18 for M, 19 for Hr and 20 for Hi. 
 
-  // It attempts diffusion of vacancies (vac) by exchanging with metal (M) and 
-  // annihilates both vacancy and dumbbell when they meet with rate of
-  // VD_mutualAnni.
+  // It attempts diffusion of vacancies (vac) by exchanging with metal (M) 
+  // and with Hr, He atoms on regular sites. It also annihilates both 
+  // vacancy and dumbbell when they meet with rate of VD_mutualAnni.
+
+  // Interstitial He (Hi) diffuse by hoping into neighboring empty sites
+
+  // He on regular sites (Hr) can diffuse by exchanging with M and Vac.
 
   // Dumbbells can also diffusion and change configuration by rotating  
-  // onsite, or by translating to nn & rotating.
+  // onsite, or by translating to nn M sites & rotating.
 
   // Both dumbbell interstitials (D) and vacancies can be annihilated at sinks
   // at specified rates.  Note, no mass conservation is enforced, they
@@ -375,18 +417,31 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
 
   double einitial,edelta;
   int i_old, j_old, i_new, j_new;
+  int i_V, i_D, i_M, i_Hr, i_Hi;
+  int j_V, j_D, j_M, j_Hr, j_Hi;
   int j, nbor;
   double P, P_event;
 
-  // if site is a vacancy 
-  if (lattice[i] == 1) {
-    if (me == 0) {
-      if (bsize[i] != 247541.0) printf("bsize[%i] = %f\n", i, bsize[i]);
-    }
+  i_old = lattice[i];
+
+  // if site is empty, return
+  if (i_old == 1) return;
+
+  i_V = i_D = i_M = i_Hr = i_Hi = 0;
+  j_V = j_D = j_M = j_Hr = j_Hi = 0;
+  
+  if (i_old == 2) i_V = 1;
+  else if (i_old > 2 && i_old < 9) i_D = 1;
+  else if (i_old > 8 && i_old < 19) i_M = 1;
+  else if (i_old == 19) i_Hr = 1;
+  else if (i_old == 20) i_Hi = 1;
+
+  // if site is a vacancy
+  if (i_V) {
     // annihilation of vacancies at sinks
     P = random->uniform();
     if (P <= V_anniAtSinks) { 
-	lattice[i] = 2;
+	lattice[i] = 9;
 	naccept++;
 	naccept_vanni++;
         NumV--;
@@ -396,17 +451,23 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
     int nbor = (int) (maxneigh*random->uniform());
     if (nbor >= maxneigh) nbor = maxneigh-1;
     int j = neighbor[i][nbor];
+    j_old = lattice[j];
       
     // if another vacancy, return
-    if (lattice[i] == lattice[j]) 
+    if (i_old == j_old) 
 	return;
+    
+    if (j_old > 2 && j_old < 9) j_D = 1;
+    else if (j_old > 8 && j_old < 19) j_M = 1;
+    else if (j_old == 19) j_Hr = 1;
+    else if (j_old == 20) j_Hi = 1;
 
-    // if vac and neigh is D, annihilate or return.
-    else if (lattice[j] > 2){
+    // if neigh of V is D, annihilate or return.
+    else if (j_D) {
        P = random->uniform();
        if(P <= VD_mutualAnni){
-           lattice[i] = 2;
-           lattice[j] = 2;
+           lattice[i] = 9;
+           lattice[j] = 9;
            naccept++;
 	   naccept_dvanni++;
            NumD--;
@@ -418,13 +479,12 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
     // DEBUG
     // if(lattice[j] != 2) printf("Error in vacancy loop\n");
 
-    // else neighbor must be M
-    else {
+    // else if neighbor is M, attempt exchange
+    else if (j_M){
        // Vacancy diffusion rate is P_vdiff 
        P_event = random->uniform();
        if (P_event <= P_vdiff) {
           i_old = lattice[i];
-          j_old = lattice[j];
           einitial = site_energy(i)+site_energy(j);
 
           lattice[i] = j_old;
@@ -452,12 +512,13 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
      }
    }
  } 
-  else if (lattice[i] > 2){
+  // if i is D, then attempt anni, rot, rot+trans
+  else if (i_D){
 
     //Attempt annihilation of dumbbells at sinks
     P = random->uniform();
     if (P <= D_anniAtSinks) { 
-	lattice[i] = 2;
+	lattice[i] = 9;
 	naccept++;
 	naccept_danni++;
         NumD--;
@@ -470,7 +531,6 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
     if (P_event <= P_rot) {
 	while(!0){
 	  i_new = (int) (6*random->uniform() + 3);
-          i_old = lattice[i];
 	  if (i_new != i_old) {
 	   if (i_old == 3){
 	     if (i_new != 4) break;
@@ -500,7 +560,6 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
     if (P_event <= P_nntr){
       nbor = (int) (4*random->uniform());
       if (nbor >= 4) nbor = 3;
-      i_old = lattice[i];
 
       // Find the randomly selected neighbor and randomly select
       // one of the two possible orientations it can have.
@@ -554,19 +613,25 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
         if (random->uniform() <= 0.5) j_new = 6;
       }
 
+      j_old = lattice[j];
+      if (j_old == 2) j_V = 1;
+      else if (j_old > 2 && j_old < 9) j_D = 1;
+      else if (j_old > 8 && j_old < 19) j_M = 1;
+      else if (j_old == 19) j_Hr = 1;
+
       //if neighbor is another dumbbell, return
-      if (lattice[j] > 2)
+      if (j_D)
 	 return;
 
       // If neighbor is a vacancy, i&j can become regular M sites by
       // mutual annihilation.  If not annihilated, return.
-      if (lattice[j] == 1){
+      if (j_V){
         P = random->uniform();
 	if(P <= VD_mutualAnni) {
            //DEBUG
            //printf("annihilate, old_spin_i[%i] = %i, old_spin_j[%i] = %i, ", i,lattice[i],j,lattice[j]);
-           lattice[i] = 2;
-	   lattice[j] = 2;
+           lattice[i] = 9;
+	   lattice[j] = 9;
            naccept++;
 	   naccept_dvanni++;
            NumD--;
@@ -577,7 +642,7 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
       }
       // Neighbor is M, so attempt exchange with the previously selected
       // new orientation for the dummbell.
-      if(lattice[j] == 2) {
+      if(j_M) {
          i_old = lattice[i];
          j_old = lattice[j];
          einitial = site_energy(i)+site_energy(j);
@@ -607,9 +672,50 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
         }
      }
    }
-   //DEBUG
-   //else printf("Error, lattice[i = %i] = %i and lattice[j = %i] = %i\n", i,lattice[i]j,lattice[j]);
  }
+  // if i is Hr, attempt exchange with M or mutual anni with D
+  else if (i_Hr){
+    int nbor = (int) (maxneigh*random->uniform());
+    if (nbor >= maxneigh) nbor = maxneigh-1;
+    int j = neighbor[i][nbor];
+    j_old = lattice[j];
+    if (j_old > 8 && j_old < 19) 
+       j_M = 1;
+
+    // if neigh is M, attempt exchange
+    if (j_M){
+        P = random->uniform();
+	if(P <= P_Hrdiff) {
+          einitial = site_energy(i)+site_energy(j);
+          i_new = j_old;
+          j_new = i_old;
+
+          lattice[i] = i_new;
+          lattice[j] = j_new;
+          edelta = site_energy(i) + site_energy(j) - einitial;
+
+          if(edelta <= 0.0){
+            naccept++;
+//*****            naccept_nntr++;
+            return;
+          }
+          else if (temperature > 0.0){ 
+            P = random->uniform();
+	    if(P <= exp(-1*edelta*t_inverse)) {
+	       naccept++;
+//*****               naccept_nntr++;
+	       return;
+            }
+          }
+         else {
+	  lattice[i] = i_old;
+	  lattice[j] = j_old;
+	  return;
+	 }
+       }
+     }
+  }  
+ 
 //DEBUG
 //else if (lattice[i] < 3) printf("Error, lattice[%i] = %i\n", i, lattice[i]);
 }

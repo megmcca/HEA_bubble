@@ -52,7 +52,7 @@ class AppOffLattice : public App {
   void virtual setup_app() {}
   virtual void *extract_app(char *) {return NULL;}
 
-  enum{NONE,LINE_2N,SQ_4N,SQ_8N,TRI,SC_6N,SC_26N,FCC,BCC,DIAMOND,
+  enum{NONE,LINE_2N,SQ_4N,SQ_8N,TRI,SC_6N,SC_26N,FCC,BCC,BCC_TETRA,DIAMOND,
 	 BCC_DUMB,BCC_OCTA_TETRA,FCC_OCTA_TETRA,RANDOM_1D,RANDOM_2D,
 	 RANDOM_3D,FILENAME};
 
