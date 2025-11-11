@@ -42,10 +42,9 @@ class DiagBccTest : public Diag {
   int diag_naccept_dvanni;
   int diag_naccept_rot;
   int diag_naccept_nntr;
-  int diag_naccept_nnt;
-  int diag_naccept_nnntr;
-  int diag_naccept_VDex;
   int diag_naccept_Vnn;
+  int diag_naccept_Hrnn;
+  int diag_naccept_Hinn;
   int diag_NumD;
   int diag_NumV;
 
@@ -54,10 +53,9 @@ class DiagBccTest : public Diag {
   int diag_naccept_dvanni_all;
   int diag_naccept_rot_all;
   int diag_naccept_nntr_all;
-  int diag_naccept_nnt_all;
-  int diag_naccept_nnntr_all;
-  int diag_naccept_VDex_all;
   int diag_naccept_Vnn_all;
+  int diag_naccept_Hrnn_all;
+  int diag_naccept_Hinn_all;
   int diag_NumD_all;
   int diag_NumV_all;
 };

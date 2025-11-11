@@ -58,19 +58,19 @@ void DiagBccTest::compute()
 
   diag_naccept_rot   = appdiff->naccept_rot;
   diag_naccept_nntr  = appdiff->naccept_nntr;
-  diag_naccept_nnt   = appdiff->naccept_nnt;
-  diag_naccept_nnntr = appdiff->naccept_nnntr;
   
   MPI_Allreduce(&diag_naccept_rot,&diag_naccept_rot_all,1,MPI_INT,MPI_SUM,world);
   MPI_Allreduce(&diag_naccept_nntr,&diag_naccept_nntr_all,1,MPI_INT,MPI_SUM,world);
-  MPI_Allreduce(&diag_naccept_nnt,&diag_naccept_nnt_all,1,MPI_INT,MPI_SUM,world);
-  MPI_Allreduce(&diag_naccept_nnntr,&diag_naccept_nnntr_all,1,MPI_INT,MPI_SUM,world);
 
   // collect final tracked events 
 
   diag_naccept_Vnn = appdiff->naccept_Vnn;
+  diag_naccept_Hrnn = appdiff->naccept_Hrnn;
+  diag_naccept_Hinn = appdiff->naccept_Hinn;
 
   MPI_Allreduce(&diag_naccept_Vnn,&diag_naccept_Vnn_all,1,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(&diag_naccept_Hrnn,&diag_naccept_Hrnn_all,1,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(&diag_naccept_Hinn,&diag_naccept_Hinn_all,1,MPI_INT,MPI_SUM,world);
 
   // collect number of D and V
 
@@ -88,17 +88,18 @@ void DiagBccTest::stats(char *strtmp)
 
   // print collected variables across all processors 
 
-  sprintf(strtmp," %7i %7i %7i %7i %8i %7i %7i %7i ",
+  sprintf(strtmp," %7i %7i %7i %7i %8i %7i %10i %10i %10i %10i ",
           diag_NumD_all,diag_NumV_all,
           diag_naccept_danni_all,diag_naccept_vanni_all,diag_naccept_dvanni_all,
-	  diag_naccept_rot_all,diag_naccept_nntr_all,diag_naccept_Vnn_all);
+	  diag_naccept_rot_all,diag_naccept_nntr_all,diag_naccept_Vnn_all,
+	  diag_naccept_Hrnn_all,diag_naccept_Hinn_all);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void DiagBccTest::stats_header(char *strtmp)
 {
-  sprintf(strtmp," %7s %7s %7s %7s %8s %7s %7s %7s",
-	  "NumD","NumV","#d-anni","#v-anni","#dv-anni","#rot","#nntr","#Vnn");
+  sprintf(strtmp," %7s %7s %7s %7s %8s %7s %10s %10s %10s %10s ",
+	  "NumD","NumV","#d-anni","#v-anni","#dv-anni","#rot","#nntr","#Vnn", "#Hrnn", "#Hinn");
 }
 

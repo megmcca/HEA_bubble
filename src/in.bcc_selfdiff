@@ -8,31 +8,38 @@ dimension	 3
 #
 boundary p p p
 #
-lattice		 bcc 1.0
+lattice		 bcc/tetra 1.0
 region		 box block 0 50 0 50 0 50 
 create_box	 box
 create_sites	 box 
 
 set             i1 value 9                	 # set all to reg 
-set             i1 range 3 8 fraction 0.01      # set fraction to dumbbells, 3 to 8 
-set             i1 value 2 fraction   0.01      # set fraction to vacancies 
-set             i1 value 10 fraction   0.01      # set fraction to Hr 
+set             i1 range 3 8 fraction 0.011      # set fraction to dumbbells, 3 to 8 
+set             i1 value 2 fraction   0.0105     # set fraction to vacancies 
+set             i1 value 19 fraction   0.01      # set fraction to Hr 
+set             i1 value 20 fraction   0.01      # set fraction to Hr 
 
-bcc/selfdiffusion rate V_anniAtSinks 0.01
-bcc/selfdiffusion rate D_anniAtSinks 0.001
-bcc/selfdiffusion rate VD_mutualAnni 0.01 
+bcc/selfdiffusion rate V_anniAtSinks 0.0
+bcc/selfdiffusion rate D_anniAtSinks 0.00
+bcc/selfdiffusion rate VD_mutualAnni 0.0 
 
-bcc/selfdiffusion rate Freq_DRot     0.01
-bcc/selfdiffusion rate Freq_DDiff    1 
-bcc/selfdiffusion rate Freq_VDiff    1
+bcc/selfdiffusion rate Freq_DRot      0.01
+bcc/selfdiffusion rate Freq_DDiff     1 
+bcc/selfdiffusion rate Freq_VDiff     1
+bcc/selfdiffusion rate Freq_HrDiff    1
+bcc/selfdiffusion rate Freq_HiDiff    1
 
 #bcc/selfdiffusion actenergy QDRot  4.6  .01 
 #bcc/selfdiffusion actenergy QDDiff 4.0  1
 #bcc/selfdiffusion actenergy QVDiff 4.2  1 
 
-bcc/selfdiffusion bondenergy VV -2 
-bcc/selfdiffusion bondenergy DD 2 
-bcc/selfdiffusion bondenergy DV 0 
+bcc/selfdiffusion bondenergy VV  -2 
+bcc/selfdiffusion bondenergy DD   2 
+bcc/selfdiffusion bondenergy DV   0 
+bcc/selfdiffusion bondenergy VHr  0 
+bcc/selfdiffusion bondenergy VHi  0 
+bcc/selfdiffusion bondenergy HrHr 0 
+bcc/selfdiffusion bondenergy HiHi 0 
 
 # T: simulation temperature
 temperature      0.0	

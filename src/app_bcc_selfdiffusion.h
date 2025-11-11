@@ -47,9 +47,9 @@ class AppBccSelfdiffusion : public AppLattice {
   int naccept_dvanni;
   int naccept_rot;
   int naccept_nntr;
-  int naccept_nnt;
-  int naccept_nnntr;
+  int naccept_Hrnn;
   int naccept_Vnn;
+  int naccept_Hinn;
   int NumD;
   int NumV;
   int NumHr;

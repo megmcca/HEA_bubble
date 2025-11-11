@@ -74,8 +74,8 @@ AppBccSelfdiffusion::AppBccSelfdiffusion(SPPARKS *spk, int narg, char **arg) :
   allocated = 0;
 
   naccept_danni = naccept_vanni = naccept_dvanni = 0;
-  naccept_rot = naccept_nntr = naccept_nnt = naccept_nnntr = 0;
-  naccept_Vnn = 0;
+  naccept_rot = naccept_nntr = 0;
+  naccept_Vnn = naccept_Hrnn = naccept_Hinn = 0;
   NumD = NumV = NumHr = NumHi = 0;
 
 }
@@ -253,13 +253,20 @@ void AppBccSelfdiffusion::init_app()
    // Count the number of dumbbells and vacancies to adjust the jump frequency accordingly
    int site;
    for (site = 0; site < nlocal; site++){
+       // if not Hi on interstial site, make it empty
+       if (site%14 > 1 && lattice[site] != 20)
+	  lattice[site] = 1;
+       // if Hi on regular site, make it M
+       else if (site%14 < 2 && lattice[site] == 20)
+	  lattice[site] = 9;
        if (lattice[site] == 2) NumV++;
        else if (lattice[site] > 2 && lattice[site] < 9) NumD++;
        else if (lattice[site] == 19) NumHr++;
        else if (lattice[site] == 20) NumHi++;
    }
    // For verification
-   //printf("NumD = %i, NumV = %i\n", NumD, NumV);
+   printf("NumD = %i, NumV = %i, NumHr = %i, NumHi = %i\n", NumD, NumV, NumHr, NumHi);
+   fprintf(logfile, "NumD = %i, NumV = %i, NumHr = %i, NumHi = %i\n", NumD, NumV, NumHr, NumHi);
 
    if(Rrot || RTransRot || RVDiff){
      P_rot = Rrot;
@@ -305,9 +312,9 @@ void AppBccSelfdiffusion::init_app()
 	P_hi = P_rot;
      if (P_vdiff > P_hi)
 	P_hi = P_vdiff;
-     if (P_Hrdiff > P_hi);
+     if (P_Hrdiff > P_hi)
 	P_hi = P_Hrdiff;
-     if (P_Hidiff > P_hi);
+     if (P_Hidiff > P_hi)
 	P_hi = P_Hidiff;
   
      sweep = 1.0/P_hi;
@@ -370,7 +377,7 @@ double AppBccSelfdiffusion::site_energy(int i)
    else if (ip == 19) i_Hr = 1;
    else if (ip == 20) i_Hi = 1;
 
-   for (int j = 0; j < maxneigh; j++){
+   for (int j = 0; j < numneigh[i]; j++){
       int nj = neighbor[i][j];
       int jp = lattice[nj];
       if (jp == 2) j_V = 1;
@@ -378,6 +385,7 @@ double AppBccSelfdiffusion::site_energy(int i)
       else if (jp > 8 && jp < 19) j_M = 1;
       else if (jp == 19) j_Hr = 1;
       else if (jp == 20) j_Hi = 1;
+      
 
       if (i_D && j_D) //if neighboring dumbbells
           energy += DD;
@@ -385,6 +393,14 @@ double AppBccSelfdiffusion::site_energy(int i)
           energy += VV;
       else if ((i_D && j_V) || (i_V && j_D)) //if dumbbell and vac
           energy += DV;
+      else if ((i_V && j_Hr) || (i_Hr && j_V)) //if dumbbell and vac
+          energy += VHr;
+      else if ((i_V && j_Hi) || (i_Hi && j_V)) //if dumbbell and vac
+          energy += VHi;
+      else if ((i_Hr && j_Hr) || (i_Hr && j_Hr)) //if dumbbell and vac
+          energy += HrHr;
+      else if ((i_Hi && j_Hi) || (i_Hi && j_Hi)) //if dumbbell and vac
+          energy += HiHi;
       }
    return 0.5*energy;
 }
@@ -447,13 +463,19 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
         NumV--;
 	return;
     }
-
-    int nbor = (int) (maxneigh*random->uniform());
-    if (nbor >= maxneigh) nbor = maxneigh-1;
+    // Vacancies are on regular BCC sites and can only exchange
+    // with neighbors on other regular sites, which are the first 8
+    // nearest neighbors.
+    int nbor = (int) (8*random->uniform());
+    if (nbor >= 8) nbor = 7;
     int j = neighbor[i][nbor];
     j_old = lattice[j];
       
-    // if another vacancy, return
+    //DEBUG
+    if (j_old == 1) 
+  	error->all(FLERR,"A reg BCC site cannot be occupied by an empty\n");
+
+    // if neighbor is another vacancy, return
     if (i_old == j_old) 
 	return;
     
@@ -463,7 +485,7 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
     else if (j_old == 20) j_Hi = 1;
 
     // if neigh of V is D, annihilate or return.
-    else if (j_D) {
+    if (j_D) {
        P = random->uniform();
        if(P <= VD_mutualAnni){
            lattice[i] = 9;
@@ -476,8 +498,6 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
        }
        return; 
     }
-    // DEBUG
-    // if(lattice[j] != 2) printf("Error in vacancy loop\n");
 
     // else if neighbor is M, attempt exchange
     else if (j_M){
@@ -674,9 +694,10 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
    }
  }
   // if i is Hr, attempt exchange with M or mutual anni with D
+  // Hr can only exchange with 8 nearest neighbors on reg BCC sites.
   else if (i_Hr){
-    int nbor = (int) (maxneigh*random->uniform());
-    if (nbor >= maxneigh) nbor = maxneigh-1;
+    int nbor = (int) (8*random->uniform());
+    if (nbor >= 8) nbor = 7;
     int j = neighbor[i][nbor];
     j_old = lattice[j];
     if (j_old > 8 && j_old < 19) 
@@ -696,14 +717,14 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
 
           if(edelta <= 0.0){
             naccept++;
-//*****            naccept_nntr++;
+            naccept_Hrnn++;
             return;
           }
           else if (temperature > 0.0){ 
             P = random->uniform();
 	    if(P <= exp(-1*edelta*t_inverse)) {
 	       naccept++;
-//*****               naccept_nntr++;
+               naccept_Hrnn++;
 	       return;
             }
           }
@@ -715,10 +736,51 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
        }
      }
   }  
- 
+
+  // if i is Hi, attempt exchange with 4 neighboring empty site
+  // which are on tetra sites
+  else if (i_Hi){
+    int nbor = (int) (4*random->uniform());
+    if (nbor >= 4) nbor = 3;
+    int j = neighbor[i][nbor];
+    j_old = lattice[j];
+
+    if(j_old == 1) {
+        P = random->uniform();
+	if(P <= P_Hidiff) {
+          einitial = site_energy(i)+site_energy(j);
+          i_new = j_old;
+          j_new = i_old;
+
+          lattice[i] = i_new;
+          lattice[j] = j_new;
+          edelta = site_energy(i) + site_energy(j) - einitial;
+
+          if(edelta <= 0.0){
+            naccept++;
+            naccept_Hinn++;
+            return;
+          }
+          else if (temperature > 0.0){ 
+            P = random->uniform();
+	    if(P <= exp(-1*edelta*t_inverse)) {
+	       naccept++;
+               naccept_Hinn++;
+	       return;
+            }
+          }
+         else {
+	  lattice[i] = i_old;
+	  lattice[j] = j_old;
+	  return;
+	 }
+       }
+    }
+ } 
 //DEBUG
 //else if (lattice[i] < 3) printf("Error, lattice[%i] = %i\n", i, lattice[i]);
 }
+
 
 /* ----------------------------------------------------------------------
    KMC method
