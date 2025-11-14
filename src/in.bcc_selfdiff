@@ -22,6 +22,7 @@ set             i1 value 20 fraction   0.01      # set fraction to Hr
 bcc/selfdiffusion rate V_anniAtSinks 0.0
 bcc/selfdiffusion rate D_anniAtSinks 0.00
 bcc/selfdiffusion rate VD_mutualAnni 0.0 
+bcc/selfdiffusion rate VHi_mutualAnni 1.0 
 
 bcc/selfdiffusion rate Freq_DRot      0.01
 bcc/selfdiffusion rate Freq_DDiff     1 
