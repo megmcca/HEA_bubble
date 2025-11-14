@@ -40,6 +40,7 @@ class DiagBccTest : public Diag {
   int diag_naccept_danni;
   int diag_naccept_vanni;
   int diag_naccept_dvanni;
+  int diag_naccept_vhianni;
   int diag_naccept_rot;
   int diag_naccept_nntr;
   int diag_naccept_Vnn;
@@ -51,6 +52,7 @@ class DiagBccTest : public Diag {
   int diag_naccept_danni_all;
   int diag_naccept_vanni_all;
   int diag_naccept_dvanni_all;
+  int diag_naccept_vhianni_all;
   int diag_naccept_rot_all;
   int diag_naccept_nntr_all;
   int diag_naccept_Vnn_all;

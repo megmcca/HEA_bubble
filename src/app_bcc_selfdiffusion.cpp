@@ -73,7 +73,7 @@ AppBccSelfdiffusion::AppBccSelfdiffusion(SPPARKS *spk, int narg, char **arg) :
 
   allocated = 0;
 
-  naccept_danni = naccept_vanni = naccept_dvanni = 0;
+  naccept_danni = naccept_vanni = naccept_dvanni = naccept_vhianni= 0;
   naccept_rot = naccept_nntr = 0;
   naccept_Vnn = naccept_Hrnn = naccept_Hinn = 0;
   NumD = NumV = NumHr = NumHi = 0;
@@ -139,6 +139,8 @@ void AppBccSelfdiffusion::parse_bccselfdiffusion(int narg, char **arg)
             D_anniAtSinks = rate_value;
         } else if (rate_name == "VD_mutualAnni") {
             VD_mutualAnni = rate_value;
+        } else if (rate_name == "VHi_mutualAnni") {
+            VHi_mutualAnni = rate_value;
         } else if (rate_name == "Freq_DRot") {
             Rrot = rate_value * THz;
         } else if (rate_name == "Freq_DDiff") {
@@ -737,15 +739,28 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
      }
   }  
 
-  // if i is Hi, attempt exchange with 4 neighboring empty site
-  // which are on tetra sites
+  // if i is Hi, it can perform two separate events
+  // hop into a V on a regular bcc site, annihilating both V and Hi
+  // Or hop into neighboring empty site on tetra sites
   else if (i_Hi){
     int nbor = (int) (4*random->uniform());
     if (nbor >= 4) nbor = 3;
-    int j = neighbor[i][nbor];
-    j_old = lattice[j];
 
-    if(j_old == 1) {
+    //attempt hop into V site
+    int j = neighbor[i][nbor+4];
+    j_old = lattice[j];
+    if(j_old == 2){
+      P = random->uniform();
+      if(P <= VHi_mutualAnni) {
+        lattice[i] = 1;
+        lattice[j] = 19; 
+        naccept++;
+        naccept_vhianni++;
+        return;
+      }
+    }
+    // else attempt hop to neighboring empty
+    else if(j_old == 1) {
         P = random->uniform();
 	if(P <= P_Hidiff) {
           einitial = site_energy(i)+site_energy(j);
@@ -776,7 +791,7 @@ void AppBccSelfdiffusion::site_event_rejection(int i, RandomPark *random)
 	 }
        }
     }
- } 
+  } 
 //DEBUG
 //else if (lattice[i] < 3) printf("Error, lattice[%i] = %i\n", i, lattice[i]);
 }

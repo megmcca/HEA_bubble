@@ -36,6 +36,7 @@ void DiagBccTest::init()
   diag_naccept_danni = diag_naccept_danni_all = 12345;
   diag_naccept_vanni = diag_naccept_vanni_all  = 42;
   diag_naccept_dvanni = diag_naccept_dvanni_all  = 22;
+  diag_naccept_vhianni = diag_naccept_vhianni_all = 0;
   diag_NumD = diag_NumD_all = 0;
   diag_NumV = diag_NumV_all = 0;
 }
@@ -49,10 +50,12 @@ void DiagBccTest::compute()
   diag_naccept_danni  = appdiff->naccept_danni;
   diag_naccept_vanni  = appdiff->naccept_vanni;
   diag_naccept_dvanni = appdiff->naccept_dvanni;
+  diag_naccept_vhianni = appdiff->naccept_vhianni;
 
   MPI_Allreduce(&diag_naccept_danni,&diag_naccept_danni_all,1,MPI_INT,MPI_SUM,world);
   MPI_Allreduce(&diag_naccept_vanni,&diag_naccept_vanni_all,1,MPI_INT,MPI_SUM,world);
   MPI_Allreduce(&diag_naccept_dvanni,&diag_naccept_dvanni_all,1,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(&diag_naccept_vhianni,&diag_naccept_vhianni_all,1,MPI_INT,MPI_SUM,world);
 
   // collect next group of tracked events 
 
@@ -88,18 +91,18 @@ void DiagBccTest::stats(char *strtmp)
 
   // print collected variables across all processors 
 
-  sprintf(strtmp," %7i %7i %7i %7i %8i %7i %10i %10i %10i %10i ",
+  sprintf(strtmp," %7i %7i %7i %7i %8i %9i %10i %10i %10i %10i %10i ",
           diag_NumD_all,diag_NumV_all,
           diag_naccept_danni_all,diag_naccept_vanni_all,diag_naccept_dvanni_all,
-	  diag_naccept_rot_all,diag_naccept_nntr_all,diag_naccept_Vnn_all,
-	  diag_naccept_Hrnn_all,diag_naccept_Hinn_all);
+	  diag_naccept_vhianni_all, diag_naccept_rot_all,diag_naccept_nntr_all,
+	  diag_naccept_Vnn_all, diag_naccept_Hrnn_all,diag_naccept_Hinn_all);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void DiagBccTest::stats_header(char *strtmp)
 {
-  sprintf(strtmp," %7s %7s %7s %7s %8s %7s %10s %10s %10s %10s ",
-	  "NumD","NumV","#d-anni","#v-anni","#dv-anni","#rot","#nntr","#Vnn", "#Hrnn", "#Hinn");
+  sprintf(strtmp," %7s %7s %7s %7s %8s %9s %10s %10s %10s %10s %10s",
+	  "NumD","NumV","#d-anni","#v-anni","#dv-anni","#vhi_anni","#rot","#nntr","#Vnn", "#Hrnn", "#Hinn");
 }
 

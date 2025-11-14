@@ -45,6 +45,7 @@ class AppBccSelfdiffusion : public AppLattice {
   int naccept_danni;
   int naccept_vanni;
   int naccept_dvanni;
+  int naccept_vhianni;
   int naccept_rot;
   int naccept_nntr;
   int naccept_Hrnn;
@@ -88,11 +89,12 @@ class AppBccSelfdiffusion : public AppLattice {
   double V_anniAtSinks = 0.0001; // Vacancy annihilation at sinks 
   double D_anniAtSinks = 0.001;  // Dumbbell annihilation at sinks 
   double VD_mutualAnni = 0.1;	 // Vacancy-Dumbbell annihhilation 
+  double VHi_mutualAnni = 0.1;	 // Vacancy-Hi annihhilation 
   double Rrot = 0.0;             // Onsite rotation  
   double RTransRot = 0.0;        // Dumbbell diffusion 
   double RVDiff = 0.0;	 	 // Vacancy diffusion  
-  double RHrDiff = 0.0;	 	 // He diffusion  
-  double RHiDiff = 0.0;	 	 // He diffusion  
+  double RHrDiff = 0.0;	 	 // Hr diffusion  
+  double RHiDiff = 0.0;	 	 // Hi diffusion  
 
   // Given frequencies of events, the relative probability of various
   // events.
